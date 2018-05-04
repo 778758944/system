@@ -1,0 +1,6 @@
+argv count: 5
+argv[0] = ./listarg
+argv[1] = testing
+argv[2] = one
+argv[3] = two
+argv[4] = 2
