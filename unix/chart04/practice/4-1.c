@@ -4,10 +4,14 @@
 #include <stdlib.h>
 
 #define oops(m) {perror(m); exit(1);}
+#define I 0000400;
+#define J 0400;
+// 100000000
 
 int main() {
-    if (mkdir("./test", DEFFILEMODE) == -1) {
+    if (mkdir("./a/b", ACCESSPERMS) == -1) {
         oops("mkdir");
     }
     return 0;
 }
+
