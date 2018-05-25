@@ -13,7 +13,7 @@ int main() {
         exit(1);
     }
 
-    while(fgets(buf, BUFSIZE, fp) == NULL) {
+    while(fgets(buf, BUFSIZE, fp) != NULL) {
         printf("%d. %s", i++, buf);
     }
 

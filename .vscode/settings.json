@@ -6,6 +6,8 @@
         "wait.h": "c",
         "splitline.h": "c",
         "unistd.h": "c",
-        "fcntl.h": "c"
+        "fcntl.h": "c",
+        "netdb.h": "c",
+        "errno.h": "c"
     }
 }
