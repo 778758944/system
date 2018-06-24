@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
     pthread_t t1, t2;
     int num = 0;
 
+    // set a lock with lock, lock is the id of this lock
     pthread_mutex_lock(&lock);
 
     arg1.fname = argv[1];
@@ -39,6 +40,8 @@ int main(int argc, char **argv) {
 
     while(num < 2) {
         puts("MAIN: waiting for a flag to go up");
+        // stop the pthread, wait for another thread signal
+        // will unlock the lock by pthread_mutex_lock
         pthread_cond_wait(&flag, &lock);
         puts("flag was rised, I have the lock");
         printf("%d, %s\n", mailbox->count, mailbox->fname);

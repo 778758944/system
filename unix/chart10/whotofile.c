@@ -15,7 +15,7 @@ int main() {
 
     if (pid == 0) {
         close(1);
-        fd = open("userlist", O_RDWR);
+        fd = open("userlist", O_RDWR | O_APPEND | O_CREAT, 0777);
         execlp("who", "who", NULL);
         perror("error to execute");
         exit(1);

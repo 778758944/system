@@ -39,6 +39,11 @@ int set_ticker(int n_msecs) {
     n_sec = n_msecs/1000;
     n_usec = (n_usec % 1000) * 1000L;
 
+    /*
+    itimerval consist of start time and interval time
+    time consist of second and hm
+    */
+
     new_timeset.it_interval.tv_sec = n_sec;
     new_timeset.it_interval.tv_usec = n_usec;
 

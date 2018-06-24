@@ -5,16 +5,17 @@ void weakup(int signum);
 
 int main() {
     signal(SIGALRM, weakup);
-    signal(SIGINT, weakup);
+    // signal(SIGINT, weakup);
     puts("Good Night");
     alarm(4);
-    pause();
+    pause(); /*block the process until a signal, signal handle return to main*/
     puts("Good Morning");
     return 0;
 }
 
 void weakup(int signum) {
-    while(1) {
-        putchar('\a');
-    }
+    printf("Alarm received from kernel\n");
+    // while(1) {
+    //     putchar('\a');
+    // }
 }

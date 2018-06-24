@@ -29,7 +29,7 @@ int main() {
         sleep(1);
     }
 
-    pthread_join(t1, NULL);
+    // pthread_join(t1, NULL);
     return 0;
 
     

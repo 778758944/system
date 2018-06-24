@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     pid = fork();
 
     if (pid > 0) {
-        close(pipefd[1]);
+        // close(pipefd[1]);
         if (dup2(pipefd[0], 0) == -1) {
             oops("error to redirect", 1);
         }

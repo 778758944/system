@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <pthread.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include "./socketlib.h"
 /*what is the difference between the string.h and strings.h*/
 
@@ -30,7 +31,8 @@ void * req_call(void *);
 void setup(pthread_attr_t * arrt);
 void do_status(int fd);
 void handle_post(int fd);
-
+void record(FILE * fp, char * str);
+static FILE * logp;
 
 int main(int argc, char **argv) {
     if (argc != 2) {
@@ -56,8 +58,8 @@ int main(int argc, char **argv) {
             oops("accept error");
         }
 
-        pthread_create(&worker, &pattr, req_call, &sock_fp);
-        // req_call(&sock_fp);
+        // pthread_create(&worker, &pattr, req_call, &sock_fp);
+        req_call(&sock_fp);
 
         /*
         pin = fdopen(sock_fp, "r");
@@ -77,14 +79,19 @@ void setup(pthread_attr_t * attr) {
 }
 
 void * req_call(void * fp) {
+    if ((logp = fopen("./log", "a")) == NULL) {
+        oops("create log file:");
+    }
     int * sock_p = (int *) fp;
     FILE * pin;
     char request[BUFSIZ];
     pin = fdopen(*sock_p, "r");
     fgets(request, BUFSIZ, pin);
     printf("get a call, request = %s\n", request);
+    record(logp, request);
     read_til_crnl(pin);
     process_rq(request, *sock_p);
+    fclose(logp);
     fclose(pin);
     close(*sock_p);
     return NULL;
@@ -94,8 +101,9 @@ void * req_call(void * fp) {
 
 void read_til_crnl(FILE * fp) {
     char buf[BUFSIZ];
-    while(fgets(buf, BUFSIZ, fp) != NULL && strcmp(buf, "\r\n") != 0) {
-        printf("%s\n", buf);
+    // && strcmp(buf, "\r\n") != 0
+    while(fgets(buf, BUFSIZ, fp) != NULL) {
+        printf("%s", buf);
     }
 
     puts("header done");
@@ -129,12 +137,12 @@ void process_rq(char *rq, int fd) {
         } else {
             cannot(fd);
         }
-    } else if (not_exist(arg)) {
-        do_404(arg, fd);
     } else if (isadir(arg)) {
         do_ls(arg, fd);
     } else if (end_in_cgi(arg)) {
         do_exe(arg, fd);
+    } else if (not_exist(arg)) {
+        do_404(arg, fd);
     } else {
         do_cat(arg, fd);
     }
@@ -178,6 +186,7 @@ bool isadir(char *arg) {
 }
 
 void header(FILE *fp, char *type) {
+    fprintf(logp,"HTTP/1.1 200 OK\r\n" );
     fprintf(fp, "HTTP/1.1 200 OK\r\n");
     if (type) {
         fprintf(fp, "Content-type: %s\r\n", type);
@@ -220,7 +229,7 @@ void do_ls(char * dir, int fd) {
 
 char * file_type(char * f) {
     char * cp;
-    if ((cp =strchr(f, '.')) != NULL) {
+    if ((cp =strrchr(f, '.')) != NULL) {
         return cp + 1; 
     }
 
@@ -228,28 +237,47 @@ char * file_type(char * f) {
 }
 
 bool end_in_cgi(char * argv) {
+    printf("argv is %s\n", argv);
     char * end = file_type(argv);
     return strcmp(end, "cgi") == 0;
 }
 
 void do_exe(char * argv, int fd) {
+    int pid;
     FILE * fp;
     fp = fdopen(fd, "w");
-    header(fp, NULL);
+    header(fp, "text/plain");
+    fprintf(fp, "\r\n");
+    // fprintf(fp, "hello");
     fflush(fp);
 
+    pid = fork();
+    if (pid == 0) {
+        dup2(fd, 1);
+        dup2(fd, 2);
+        close(fd);
+        execl("./hello.cgi", "hello.cgi", NULL);
+        oops("cgi error");
+    } else {
+        // fflush(fp);
+        wait(NULL);
+        puts("child over");
+        // close(fd);
+    }
+    /*
     dup2(fd, 1);
     dup2(fd, 2);
     close(fd);
     execl(argv, argv, NULL);
     exit(1);
+    */
 }
 
 void do_cat(char * arg, int fd) {
     puts("do_cat");
     FILE * fp;
     fp = fdopen(fd, "w");
-    char * end = file_type(arg+1);
+    char * end =  file_type(arg+1);
     FILE * end_fp;
     char c;
     int size;
@@ -311,18 +339,23 @@ void handle_post(int fd) {
     char buf[BUFSIZ];
     int nread;
     FILE * fp;
-    FILE * fpr = fdopen(fd, "r");
-    fp = fdopen(fd, "w");
+    fp = fdopen(fd, "r");
     char c;
-    if (read(fd, buf, BUFSIZ) > 0) {
-        puts(buf);
+    puts("to read post");
+    if (fgets(buf, BUFSIZ, fp) != NULL) {
+        printf("receive data: %s\n", buf);
+        fflush(stdout);
     }
     puts("read done");
-    header(fp, "text/plain");
-    fprintf(fp, "\r\n");
-    fprintf(fp, "hahahahaaaha");
-    fclose(fp);
-    fclose(fpr);
+    // header(fp, "text/plain");
+    // fprintf(fp, "\r\n");
+    // fprintf(fp, "hahahahaaaha");
+    // fclose(fp);
+}
+
+
+void record(FILE * fp, char * str) {
+    fputs(str, fp);
 }
 
 
