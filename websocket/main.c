@@ -1,0 +1,76 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <pthread.h>
+#include "./websocket.h"
+#define FORHEART "hello"
+#define oops(m) {perror(m); exit(1);}
+
+void setup(pthread_attr_t * attr);
+
+
+void setup(pthread_attr_t * attr) {
+    pthread_attr_init(attr);
+    pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED);
+}
+
+void * handleNewSocket(void *);
+
+void * handleNewSocket(void * p) {
+    int fd;
+    char key[BUFSIZ];
+    char * acceptKey;
+    FILE * fp;
+    fd = *((int *) p);
+    fp = fdopen(fd, "r");
+    showHttpRequestLine(fp);
+    getHandSharkKey(fp, key);
+    acceptKey = getEncodeText(key);
+    handsharkresponse(fd, acceptKey);  
+    while (decodeFrame(fd)) {
+        sendFrame(fd, 1, 0x9, FORHEART, strlen(FORHEART));
+    } 
+    // decodeFrame(fd);
+    // sendMsg(fd, "./m.mp3");
+    close(fd);
+    return NULL;
+}
+
+int main(int argc, char **argv) {
+    int fd;
+    char key[BUFSIZ];
+    char * accpet;
+    int sock_id = make_server(argv[1]);
+    FILE * fp;
+
+    if (sock_id == -1) {
+        oops("server error:");
+    }
+
+
+
+    while (1) {
+        int pid;
+        pthread_t t;
+        pthread_attr_t attr;
+        fd = accept(sock_id, NULL, NULL);
+        setup(&attr);
+        pthread_create(&t, &attr, handleNewSocket, &fd);
+        
+        /*
+        fp = fdopen(fd, "r");
+        showHttpRequestLine(fp);
+        getHandSharkKey(fp, key);
+        accpetKey = getEncodeText(key);
+        handsharkresponse(fd, accpetKey);
+        sleep(2);
+        decodeFrame(fd);
+        // sendTextMsg(fd, "hello, websocket");
+        // sendFile("./girl.jpg", fd);
+        // heartDetect(fd);
+        // sleep(5);
+        // sendTextMsg(fd, "hello, websocket");
+        sendMsg(fd, "./m.mp3");
+        */
+    }
+}
