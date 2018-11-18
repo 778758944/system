@@ -8,12 +8,14 @@
 #include <pthread.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include "./socketlib.h"
 /*what is the difference between the string.h and strings.h*/
 
 #define oops(m) {perror(m); exit(1);}
 
 int request_times = 0;
+unsigned long bodyLen;
 
 void read_til_crnl(FILE *fp);
 void process_rq(char *requesr, int fd);
@@ -33,6 +35,15 @@ void do_status(int fd);
 void handle_post(int fd);
 void record(FILE * fp, char * str);
 static FILE * logp;
+void do_json_test(int fd);
+void tolowercase(char * str);
+
+void tolowercase(char * str) {
+    size_t len = strlen(str);
+    for(int i = 0; i < len; i++) {
+        str[i] = tolower(str[i]);
+    }
+}
 
 int main(int argc, char **argv) {
     if (argc != 2) {
@@ -101,10 +112,26 @@ void * req_call(void * fp) {
 
 void read_til_crnl(FILE * fp) {
     char buf[BUFSIZ];
-    // && strcmp(buf, "\r\n") != 0
-    while(fgets(buf, BUFSIZ, fp) != NULL) {
+    while(fgets(buf, BUFSIZ, fp) != NULL && strcmp(buf, "\r\n") != 0) {
         printf("%s", buf);
+        tolowercase(buf);
+        char * col_p = strchr(buf, ':') + 2;
+        if (strstr(buf, "content-length")) {
+            sscanf(col_p, "%ld", &bodyLen);
+            printf("bodyLen = %ld\n", bodyLen);
+
+        }
+
     }
+
+    char * buf2 = malloc(bodyLen);
+    memset(buf2, 0, bodyLen);
+    
+
+    fread(buf2, bodyLen, 1, fp);
+
+    fwrite(buf2, bodyLen, 1, stdout);
+    fflush(stdout);
 
     puts("header done");
 }
@@ -145,6 +172,7 @@ void process_rq(char *rq, int fd) {
         do_404(arg, fd);
     } else {
         do_cat(arg, fd);
+        // do_json_test(fd);
     }
 
     request_times++;
@@ -339,23 +367,47 @@ void handle_post(int fd) {
     char buf[BUFSIZ];
     int nread;
     FILE * fp;
-    fp = fdopen(fd, "r");
+    fp = fdopen(fd, "w");
     char c;
     puts("to read post");
+    /*
     if (fgets(buf, BUFSIZ, fp) != NULL) {
+        puts("dede");
         printf("receive data: %s\n", buf);
         fflush(stdout);
     }
+    */
+   /*
+    fread(buf, 0, 1, fp);
+    printf("receive data: %s\n", buf);
+    fflush(stdout);
+    */
     puts("read done");
-    // header(fp, "text/plain");
-    // fprintf(fp, "\r\n");
-    // fprintf(fp, "hahahahaaaha");
-    // fclose(fp);
+    header(fp, "text/plain");
+    fprintf(fp, "\r\n");
+    fprintf(fp, "hahahahaaaha");
+    fflush(fp);
+    fclose(fp);
+    printf("responsed data");
+    fflush(stdout);
+    // puts("hahah");
 }
 
 
 void record(FILE * fp, char * str) {
     fputs(str, fp);
+}
+
+
+void do_json_test(int fd) {
+    FILE * fp = fdopen(fd, "w");
+    header(fp, "application/json");
+
+    fprintf(fp, "\r\n");
+
+    fputs("{\"name\": \"jack\"}", fp);
+
+    fclose(fp);
 }
 
 

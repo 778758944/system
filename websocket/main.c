@@ -26,12 +26,17 @@ void * handleNewSocket(void * p) {
     showHttpRequestLine(fp);
     getHandSharkKey(fp, key);
     acceptKey = getEncodeText(key);
-    handsharkresponse(fd, acceptKey);  
+    handsharkresponse(fd, acceptKey);
+    decodeFrame(fd);
+    /*
     while (decodeFrame(fd)) {
         sendFrame(fd, 1, 0x9, FORHEART, strlen(FORHEART));
     } 
+    */
     // decodeFrame(fd);
     // sendMsg(fd, "./m.mp3");
+    printf("send message to client");
+    sendTextMsg(fd, "hello, websocket");
     close(fd);
     return NULL;
 }
