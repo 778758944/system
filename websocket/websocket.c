@@ -1,27 +1,37 @@
 #include "./websocket.h"
 
 int make_server(char * port) {
-    struct addrinfo *result, dint;
-    int sock_id, rc;
+    // struct addrinfo *result, dint;
+    struct sockaddr_in result;
+    int sock_id, rc, addr;
 
-    memset(&dint, 0, sizeof(dint));
+    inet_pton(AF_INET, "10.0.0.148", &addr);
+
+    // memset(&dint, 0, sizeof(dint));
     
-    dint.ai_family = AF_INET;
-    dint.ai_socktype = SOCK_STREAM;
+    // dint.ai_family = AF_INET;
+    // dint.ai_socktype = SOCK_STREAM;
+    // dint.ai_addr.
 
-    rc = getaddrinfo(NULL, port, &dint, &result);
+    // rc = getaddrinfo(NULL, port, &dint, &result);
 
-    if (rc != 0) {
+    // if (rc != 0) {
+    //     return -1;
+    // }
+
+    sock_id = socket(AF_INET, SOCK_STREAM, 0);
+    memset(&result, 0, sizeof(result));
+
+    result.sin_family = AF_INET;
+    result.sin_addr.s_addr = htons(INADDR_ANY);
+    result.sin_port = htons(8887);
+
+
+    if (bind(sock_id, &result, sizeof(result)) != 0) {
         return -1;
     }
 
-    sock_id = socket(dint.ai_family, dint.ai_socktype, dint.ai_protocol);
-
-    if (bind(sock_id, result->ai_addr, result->ai_addrlen) != 0) {
-        return -1;
-    }
-
-    freeaddrinfo(result);
+    // freeaddrinfo(result);
 
     if (listen(sock_id, 10) != 0) {
         return -1;

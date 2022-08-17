@@ -58,7 +58,16 @@ int main(int argc, char **argv) {
         int pid;
         pthread_t t;
         pthread_attr_t attr;
+        struct sockaddr_in connaddr;
+        uint32_t connaddr_len;
+        char ip[100];
         fd = accept(sock_id, NULL, NULL);
+        printf("receive req\n");
+        getsockname(fd, &connaddr, &connaddr_len);
+        inet_ntop(AF_INET, (struct sockaddr *) &connaddr.sin_addr.s_addr, ip, 100);
+        printf("ip: %s, port: %d\n", ip, ntohs(connaddr.sin_port));
+        
+
         setup(&attr);
         pthread_create(&t, &attr, handleNewSocket, &fd);
         
